@@ -7,9 +7,9 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use ratatui::Terminal;
 use ratatui::backend::TestBackend;
 use ratatui::crossterm::event::{KeyCode, KeyModifiers};
-use tree_explorer::app::{App, Focus, Mode};
-use tree_explorer::theme;
-use tree_explorer::ui;
+use treeview::app::{App, Focus, Mode};
+use treeview::theme;
+use treeview::ui;
 use unicode_width::UnicodeWidthStr;
 
 static COUNTER: AtomicUsize = AtomicUsize::new(0);
@@ -22,7 +22,7 @@ struct Fixture {
 impl Fixture {
     fn new() -> Self {
         let root = std::env::temp_dir().join(format!(
-            "tree-explorer-test-{}-{}",
+            "treeview-test-{}-{}",
             std::process::id(),
             COUNTER.fetch_add(1, Ordering::Relaxed)
         ));

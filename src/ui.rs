@@ -4,7 +4,7 @@
 //!
 //! ```text
 //!  ~ › Projects › ratatui-test            3 dirs · 4 files   ← chrome bar
-//!  ╭┤  tree-explorer  6 ├────────╮╭┤  src  6 ├──────────────╮
+//!  ╭┤  treeview  6 ├────────────╮╭┤  src  6 ├──────────────╮
 //!  │▌   src              4.0K 2h││▌   bin/                  │
 //!  │     site/            128B 3d││    app.rs       15K  5m  │
 //!  ╰────────────────────────────╯╰──────────────────────────╯

@@ -1,23 +1,24 @@
 [package]
-name = "tree-explorer"
+name = "treeview"
 version = "0.1.0"
 edition = "2024"
 description = "Two-pane terminal file explorer"
 license = "MIT"
 rust-version = "1.88"
-keywords = ["tui", "file-manager", "terminal", "ratatui", "filesystem"]
+keywords = ["tui", "file-manager", "terminal", "ratatui", "treeview"]
 categories = ["command-line-utilities"]
-repository = "https://github.com/fitrialrahim/tree-explorer"
-documentation = "https://docs.rs/tree-explorer"
-homepage = "https://github.com/fitrialrahim/tree-explorer"
+repository = "https://github.com/fitri/treeview"
+documentation = "https://docs.rs/treeview"
+homepage = "https://fitri.github.io/treeview/"
 readme = "README.md"
+exclude = ["docs/**", ".github/**"]
 
 [lib]
-name = "tree_explorer"
+name = "treeview"
 path = "src/lib.rs"
 
 [[bin]]
-name = "tree-explorer"
+name = "treeview"
 path = "src/main.rs"
 
 [target.'cfg(unix)'.dependencies]

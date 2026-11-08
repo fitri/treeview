@@ -1,18 +1,16 @@
-# tree-explorer
+# treeview
 
 A two-pane terminal file explorer in Rust, built on `ratatui 0.30`.
 
 ```text
  ~ › Projects › ratatui-test                                                            3    0
 ╭  ratatui-test  3 ──────────────────────╮╭  demo  6 ────────────────────────────────────────╮
-│▌  demo/                              2h││▌  examples/                                    2h│
-│   site/                             28m││   src/                                         2h│
-│   tree-explorer/                     3m││   target/                                      2h│
-│                                         ││   tests/                                       2h│
-│                                         ││   Cargo.lock                            43K    2h│
-│                                         ││   Cargo.toml                           200B    2h│
-│                                         ││                                                   │
-│                                         ││                                                   │
+│▌  demo/                              5h││▌  examples/                                    5h│
+│   site/                              1m││   src/                                         5h│
+│   treeview/                         now││   target/                                      5h│
+│                                         ││   tests/                                       5h│
+│                                         ││   Cargo.lock                            43K    5h│
+│                                         ││   Cargo.toml                           200B    5h│
 │                                         ││                                                   │
 │                                         ││                                                   │
 ╰─────────────────────────────────────────╯╰───────────────────────────────────────────────────╯
@@ -22,6 +20,23 @@ A two-pane terminal file explorer in Rust, built on `ratatui 0.30`.
 * **left pane** — entries of the directory you are in (directories first)
 * **right pane** — the highlighted entry: its contents, or the first 100 lines of a text file
 * binary files and special files (pipes, devices, sockets) show a notice instead of garbage
+
+## Install
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/fitri/treeview/main/install.sh | sh
+```
+
+Downloads a prebuilt static binary into `~/.local/bin` (override with
+`PREFIX=/usr/local/bin`). If there is no release for your platform it builds
+from source with cargo.
+
+Other ways:
+
+```sh
+cargo install --git https://github.com/fitri/treeview   # from source
+cargo build --release                                   # from a checkout
+```
 
 ## Keys
 
@@ -115,7 +130,7 @@ fastest way to see what a change did without a terminal.
 ## Building
 
 ```bash
-cargo build --release                                   # 619 KB on x86_64-linux
+cargo build --release                                    # 620 KB on x86_64-linux
 cargo build --release --target x86_64-unknown-linux-musl # 713 KB, fully static
 ```
 

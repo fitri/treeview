@@ -17,8 +17,8 @@ use std::path::PathBuf;
 use ratatui::Terminal;
 use ratatui::backend::TestBackend;
 use ratatui::crossterm::event::{KeyCode, KeyModifiers};
-use tree_explorer::app::App;
-use tree_explorer::ui;
+use treeview::app::App;
+use treeview::ui;
 use unicode_width::UnicodeWidthStr;
 
 fn main() {
