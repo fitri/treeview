@@ -5,10 +5,14 @@
 //!
 //! `h`/`l` move focus between panes, `j`/`k` move the cursor, `enter` opens the
 //! highlighted directory, `/` filters the focused pane live.
+//!
+//! The binary takes an optional path — see [`cli`] — and starts in the current
+//! directory when it is not given one.
 
 #![warn(missing_docs)]
 
 pub mod app;
+pub mod cli;
 pub mod fs;
 pub mod theme;
 pub mod ui;

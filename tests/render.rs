@@ -397,3 +397,37 @@ fn fifos_are_never_opened() {
         Err(_) => panic!("rendering a FIFO blocked — the preview opened a special file"),
     }
 }
+
+#[test]
+fn reveal_lands_on_a_named_file_and_previews_it() {
+    let fixture = Fixture::new();
+    let mut app = App::new(fixture.path().to_path_buf());
+    app.reveal(std::ffi::OsStr::new("notes.md"));
+
+    let screen = render(&app, 100, 24);
+    assert!(
+        screen.contains("# notes"),
+        "notes.md not previewed:\n{screen}"
+    );
+
+    // The cursor is on it, so the next move goes to the entry after it.
+    key(&mut app, KeyCode::Char('j'));
+    assert_ne!(
+        app.left.selected().map(|e| e.name.as_str()),
+        Some("notes.md")
+    );
+}
+
+#[test]
+fn reveal_unhides_a_dotfile_it_was_asked_for() {
+    let fixture = Fixture::new();
+    let mut app = App::new(fixture.path().to_path_buf());
+    app.reveal(std::ffi::OsStr::new(".secret"));
+
+    let screen = render(&app, 100, 24);
+    assert!(screen.contains(".secret"), ".secret not listed:\n{screen}");
+    assert_eq!(
+        app.left.selected().map(|e| e.name.as_str()),
+        Some(".secret")
+    );
+}

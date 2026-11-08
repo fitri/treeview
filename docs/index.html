@@ -23,6 +23,7 @@ border-radius:0 12px 12px 0;padding:16px 20px;margin:0 0 34px}
 .install pre{margin:0;font:13px/1.7 var(--mono);color:#dbe6f5;white-space:pre-wrap;overflow-x:auto}
 .install .alt{color:var(--dim);font-size:12.5px;margin-top:10px}
 .install .alt code{color:#c8d3e0}
+.install pre .alt{color:var(--dim)}
 .shot{margin:0 0 26px}
 .head h2{font-size:16px;margin:0 0 4px;color:#e6edf6}
 .note{color:var(--dim);font-size:13px;margin:0 0 12px}
@@ -56,6 +57,13 @@ whatever is highlighted — a folder's contents, or the first 100 lines of a fil
   <h2>Install</h2>
 <pre>curl -fsSL https://raw.githubusercontent.com/fitri/treeview/main/install.sh | sh</pre>
   <div class="alt">or with Rust: <code>cargo install --git https://github.com/fitri/treeview</code></div>
+</div>
+
+<h3>Start</h3>
+<div class="install">
+<pre>treeview              <span class="alt"># the current directory</span>
+treeview ~/Projects   <span class="alt"># a directory you name</span>
+treeview ~/.bashrc    <span class="alt"># its parent, with the file selected</span></pre>
 </div>
 
 <h3>Keys</h3>

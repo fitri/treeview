@@ -49,6 +49,19 @@ cargo install --git https://github.com/fitri/treeview   # from source
 cargo build --release                                   # from a checkout
 ```
 
+## Start
+
+```sh
+treeview              # the current directory
+treeview ~/Projects   # a directory you name
+treeview ~/.bashrc    # its parent, with the file under the cursor
+```
+
+The path is optional and defaults to the current directory. A path that names a
+file opens its parent and puts the cursor on that file, since a terminal cannot
+list a file. A path that does not exist is reported and exits non-zero instead
+of opening an empty pane.
+
 ## Keys
 
 | Key | Action |
@@ -121,6 +134,7 @@ should never be able to hurt your terminal.
 src/theme.rs   palette, icons, per-extension colours
 src/fs.rs      read directories, build previews (no UI types)
 src/app.rs     state: two panes, filter, focus, key handling
+src/cli.rs     command-line parsing and the start path
 src/ui.rs      rendering; a pure function of App
 src/main.rs    terminal setup + the event loop
 examples/preview.rs  render to stdout, no terminal needed

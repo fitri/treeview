@@ -8,6 +8,7 @@
 //! highlighted directory (it becomes the left pane), `/` filters the focused
 //! pane live.
 
+use std::ffi::OsStr;
 use std::path::PathBuf;
 
 use ratatui::crossterm::event::{KeyCode, KeyModifiers};
@@ -291,6 +292,39 @@ impl App {
                 preview: fs::load_preview(&entry, self.show_hidden),
                 scroll: 0,
             };
+        }
+    }
+
+    /// Put the cursor on the entry named `name` and preview it.
+    ///
+    /// The CLI uses this when it is handed a file: the pane opens at the file's
+    /// parent and the cursor lands on the file itself. A dotfile named
+    /// explicitly is revealed even though dotfiles are hidden by default — the
+    /// user asked for that entry, so hiding it would silently ignore the
+    /// argument.
+    pub fn reveal(&mut self, name: &OsStr) {
+        if !self.select_name(name) && name.to_string_lossy().starts_with('.') {
+            self.show_hidden = true;
+            self.left.reload(true);
+            self.select_name(name);
+        }
+        self.refresh_right();
+    }
+
+    /// Move the cursor onto `name` if the listing has it. Reports success.
+    fn select_name(&mut self, name: &OsStr) -> bool {
+        let wanted = name.to_string_lossy();
+        match self
+            .left
+            .matches
+            .iter()
+            .position(|&index| self.left.entries[index].name == *wanted)
+        {
+            Some(pos) => {
+                self.left.pos = pos;
+                true
+            }
+            None => false,
         }
     }
 

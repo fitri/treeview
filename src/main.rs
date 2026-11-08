@@ -1,73 +1,77 @@
 use std::io;
-use std::path::PathBuf;
+use std::process::ExitCode;
 use std::time::Duration;
 
 use ratatui::DefaultTerminal;
 use ratatui::crossterm::event::{self, Event, KeyEventKind};
 use treeview::app::App;
+use treeview::cli::{self, Invocation, Start};
 use treeview::ui;
 
-const HELP: &str = "\
-treeview — a two-pane terminal file explorer
+/// Exit code for a bad command line, matching the convention `getopt` set.
+const USAGE_ERROR: u8 = 2;
 
-USAGE:
-    treeview [PATH]
-
-ARGS:
-    <PATH>    directory to start in (default: current directory)
-
-KEYS:
-    h / l     focus the left / right pane
-    j / k     move the cursor
-    enter     open the highlighted directory
-    bksp      go up one level
-    /         filter the focused pane
-    i         toggle Nerd Font icons
-    .         toggle dotfiles
-    r         reload
-    d / u     scroll a text preview
-    q         quit
-
-OPTIONS:
-    -h, --help       show this help
-    -V, --version    show the version
-";
-
-fn main() -> io::Result<()> {
-    // Handle flags before touching the terminal, so `treeview --version` works
-    // from an installer or a shell script with no tty attached.
-    let mut start: Option<PathBuf> = None;
-    for arg in std::env::args().skip(1) {
-        match arg.as_str() {
-            "-h" | "--help" => {
-                print!("{HELP}");
-                return Ok(());
-            }
-            "-V" | "--version" => {
-                println!("treeview {}", env!("CARGO_PKG_VERSION"));
-                return Ok(());
-            }
-            other => start = Some(PathBuf::from(other)),
+fn main() -> ExitCode {
+    // Everything below the terminal's turn — help, version, bad flags and a
+    // missing directory — is answered first, so `treeview --version` still works
+    // from an installer with no tty attached.
+    let invocation = match cli::parse(std::env::args_os().skip(1)) {
+        Ok(invocation) => invocation,
+        Err(message) => {
+            eprintln!("treeview: {message}\ntry 'treeview --help'");
+            return ExitCode::from(USAGE_ERROR);
         }
-    }
-    let start =
-        start.unwrap_or_else(|| std::env::current_dir().unwrap_or_else(|_| PathBuf::from(".")));
+    };
 
+    let start = match invocation {
+        Invocation::Help => {
+            print!("{}", cli::HELP);
+            return ExitCode::SUCCESS;
+        }
+        Invocation::Version => {
+            println!("treeview {}", env!("CARGO_PKG_VERSION"));
+            return ExitCode::SUCCESS;
+        }
+        Invocation::Run(path) => match cli::resolve(path) {
+            Ok(start) => start,
+            Err(message) => {
+                eprintln!("treeview: {message}");
+                return ExitCode::FAILURE;
+            }
+        },
+    };
+
+    run(start)
+}
+
+fn run(start: Start) -> ExitCode {
     // `try_init` instead of `init` so a non-interactive run gets a message
     // instead of a panic + a broken terminal.
     let mut terminal = match ratatui::try_init() {
         Ok(terminal) => terminal,
         Err(err) => {
             eprintln!("treeview needs an interactive terminal: {err}");
-            std::process::exit(1);
+            return ExitCode::FAILURE;
         }
     };
-    let result = run(&mut terminal, App::new(start));
+
+    let mut app = App::new(start.dir);
+    if let Some(name) = start.select {
+        app.reveal(&name);
+    }
+
+    let result = event_loop(&mut terminal, app);
     ratatui::restore();
-    result
+    match result {
+        Ok(()) => ExitCode::SUCCESS,
+        Err(err) => {
+            eprintln!("treeview: {err}");
+            ExitCode::FAILURE
+        }
+    }
 }
 
-fn run(terminal: &mut DefaultTerminal, mut app: App) -> io::Result<()> {
+fn event_loop(terminal: &mut DefaultTerminal, mut app: App) -> io::Result<()> {
     while !app.quit {
         terminal.draw(|frame| ui::draw(frame, &app))?;
 
