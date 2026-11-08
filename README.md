@@ -1,21 +1,10 @@
 # treeview
 
-A two-pane terminal file explorer in Rust, built on `ratatui 0.30`.
+A two-pane file explorer for the terminal, built on [ratatui](https://ratatui.rs).
+The left pane lists the directory you're in; the right previews whatever is
+highlighted — a folder's contents, or the first 100 lines of a file.
 
-```text
- ~ › Projects › ratatui-test                                                            3    0
-╭  ratatui-test  3 ──────────────────────╮╭  demo  6 ────────────────────────────────────────╮
-│▌  demo/                              5h││▌  examples/                                    5h│
-│   site/                              1m││   src/                                         5h│
-│   treeview/                         now││   target/                                      5h│
-│                                         ││   tests/                                       5h│
-│                                         ││   Cargo.lock                            43K    5h│
-│                                         ││   Cargo.toml                           200B    5h│
-│                                         ││                                                   │
-│                                         ││                                                   │
-╰─────────────────────────────────────────╯╰───────────────────────────────────────────────────╯
- LEFT   h/l pane  j/k move  enter open  bksp up  / find  i icons  q quit
-```
+![treeview browsing a Rust project: a coloured file list on the left, a Cargo.toml preview with line numbers on the right](https://raw.githubusercontent.com/fitri/treeview/main/assets/screenshot.png)
 
 * **left pane** — entries of the directory you are in (directories first)
 * **right pane** — the highlighted entry: its contents, or the first 100 lines of a text file
