@@ -1,17 +1,25 @@
-# treeview
+<h1 align="center">treeview</h1>
 
-**A two-pane file explorer for the terminal.** Browse on the left, preview on the
-right — no configuration file, no runtime, one static binary.
+<p align="center">
+  <strong>A two-pane file explorer for the terminal.</strong> Browse on the left,
+  preview on the right — no configuration file, no runtime, one static binary.
+</p>
 
-[![CI](https://github.com/fitri/treeview/actions/workflows/ci.yml/badge.svg)](https://github.com/fitri/treeview/actions/workflows/ci.yml)
-[![Release](https://img.shields.io/github/v/release/fitri/treeview)](https://github.com/fitri/treeview/releases)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+<p align="center">
+  <a href="https://github.com/fitri/treeview/actions/workflows/ci.yml"><img src="https://github.com/fitri/treeview/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://github.com/fitri/treeview/releases"><img src="https://img.shields.io/github/v/release/fitri/treeview" alt="Release"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT"></a>
+</p>
 
-![treeview browsing a Rust project: a coloured file list on the left, a Cargo.toml preview with line numbers on the right](https://raw.githubusercontent.com/fitri/treeview/main/assets/screenshot.png)
+<p align="center">
+  <img src="https://raw.githubusercontent.com/fitri/treeview/main/assets/screenshot.png" alt="treeview browsing a Rust project: a coloured file list on the left, a Cargo.toml preview with line numbers on the right">
+</p>
 
-The left pane lists the directory you are in; the right previews whatever is
-highlighted — a folder's contents, or the first 100 lines of a file. Built on
-[ratatui](https://ratatui.rs).
+<p align="center">
+  The left pane lists the directory you are in; the right previews whatever is
+  highlighted — a folder's contents, or the first 100 lines of a file. Built on
+  <a href="https://ratatui.rs">ratatui</a>.
+</p>
 
 ## Features
 
