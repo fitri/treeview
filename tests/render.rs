@@ -21,12 +21,17 @@ struct Fixture {
 
 impl Fixture {
     fn new() -> Self {
-        let root = std::env::temp_dir().join(format!(
+        let raw = std::env::temp_dir().join(format!(
             "treeview-test-{}-{}",
             std::process::id(),
             COUNTER.fetch_add(1, Ordering::Relaxed)
         ));
-        let _ = fs::remove_dir_all(&root);
+        let _ = fs::remove_dir_all(&raw);
+        fs::create_dir_all(&raw).unwrap();
+        // `App::new` canonicalises its start path, and macOS maps /var to
+        // /private/var while Windows returns verbatim `\\?\` paths. Store the
+        // canonical root so path comparisons match on every platform.
+        let root = fs::canonicalize(&raw).unwrap();
         fs::create_dir_all(root.join("alpha/nested")).unwrap();
         fs::create_dir_all(root.join("beta")).unwrap();
         fs::create_dir_all(root.join(".git")).unwrap();
