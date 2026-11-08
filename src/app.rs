@@ -48,6 +48,8 @@ pub struct Browse {
     pub pos: usize,
     /// Set when the directory could not be read (permissions, deleted, …).
     pub error: Option<String>,
+    /// The listing hit `fs::MAX_ENTRIES`; more entries exist on disk.
+    pub truncated: bool,
 }
 
 impl Browse {
@@ -60,6 +62,7 @@ impl Browse {
             matches: Vec::new(),
             pos: 0,
             error: None,
+            truncated: false,
         };
         browse.reload(show_hidden);
         browse
@@ -71,6 +74,7 @@ impl Browse {
         let anchor = self.selected().map(|entry| entry.name.clone());
         match fs::read_entries(&self.dir, show_hidden) {
             Ok(entries) => {
+                self.truncated = entries.len() >= fs::MAX_ENTRIES;
                 self.entries = entries;
                 self.error = None;
             }
@@ -212,7 +216,12 @@ impl App {
         let left = Browse::new(start, false);
         let mut app = Self {
             left,
-            right: RightPane::Dir(Browse::new(PathBuf::from("/"), false)),
+            // Placeholder, replaced by `refresh_right` below without any I/O.
+            right: RightPane::Info {
+                title: String::new(),
+                preview: Preview::Empty,
+                scroll: 0,
+            },
             focus: Focus::Left,
             mode: Mode::Normal,
             query: String::new(),
@@ -363,8 +372,13 @@ impl App {
     fn move_focused(&mut self, delta: isize) {
         match self.focus {
             Focus::Left => {
+                let before = self.left.pos;
                 self.left.move_sel(delta);
-                self.after_left_change();
+                // Pushing `k` at the top of a list should not re-read the
+                // highlighted directory from disk.
+                if self.left.pos != before {
+                    self.after_left_change();
+                }
             }
             Focus::Right => {
                 if let Some(browse) = self.right.browse_mut() {
@@ -477,38 +491,9 @@ impl App {
 
     // ---- read-only helpers used by the UI and tests ----
 
-    pub fn left_title(&self) -> String {
-        let base = self
-            .left
-            .dir
-            .file_name()
-            .map(|n| n.to_string_lossy().into_owned())
-            .unwrap_or_else(|| self.left.dir.display().to_string());
-        if self.left.is_filtered() {
-            format!(
-                "{base}  [{}/{}]",
-                self.left.matches.len(),
-                self.left.entries.len()
-            )
-        } else {
-            format!("{base}  ({})", self.left.entries.len())
-        }
-    }
-
     pub fn right_title(&self) -> String {
         match &self.right {
-            RightPane::Dir(browse) => {
-                if browse.is_filtered() {
-                    format!(
-                        "{}  [{}/{}]",
-                        self.right.title(),
-                        browse.matches.len(),
-                        browse.entries.len()
-                    )
-                } else {
-                    format!("{}  ({})", self.right.title(), browse.entries.len())
-                }
-            }
+            RightPane::Dir(_) => self.right.title(),
             RightPane::Info { title, preview, .. } => match preview {
                 Preview::Text {
                     size,

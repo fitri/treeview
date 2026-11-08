@@ -11,6 +11,8 @@
 //!  NORMAL   h/l pane  j/k move  …                            ← chrome bar
 //! ```
 
+use std::time::SystemTime;
+
 use ratatui::Frame;
 use ratatui::layout::{Alignment, Constraint, Layout, Rect};
 use ratatui::style::{Color, Modifier, Style};
@@ -19,7 +21,14 @@ use ratatui::widgets::{Block, BorderType, Fill, List, ListItem, ListState, Parag
 use unicode_width::UnicodeWidthStr;
 
 use crate::app::{App, Browse, Focus, Mode, RightPane};
-use crate::fs::{Entry, Preview, human_age, human_size};
+use crate::fs::{Entry, Preview, human_age_at, human_size};
+/// Per-frame context shared by both panes.
+struct View {
+    focused: bool,
+    icons: bool,
+    now: SystemTime,
+}
+
 use crate::theme::{
     self, BLUE, CHROME_BG, CYAN, DARK, DIM_TEXT, FAINT, FG, ICON_BLANK, MAGENTA, MUTED, RED,
     SELECT_BG, YELLOW, look,
@@ -55,35 +64,53 @@ pub fn draw(frame: &mut Frame, app: &App) {
     let [left_area, right_area] =
         Layout::horizontal([Constraint::Percentage(45), Constraint::Min(24)]).areas(body);
 
+    let now = SystemTime::now();
+
+    let view = View {
+        focused: app.focused(Focus::Left),
+        icons: app.icons,
+        now,
+    };
     render_browse(
         frame,
         &app.left,
         left_area,
-        app.focused(Focus::Left),
-        app.icons,
         browse_title(&app.left, app.icons),
+        &view,
     );
 
     match &app.right {
-        RightPane::Dir(browse) => render_browse(
-            frame,
-            browse,
-            right_area,
-            app.focused(Focus::Right),
-            app.icons,
-            browse_title(browse, app.icons),
-        ),
+        RightPane::Dir(browse) => {
+            let view = View {
+                focused: app.focused(Focus::Right),
+                icons: app.icons,
+                now,
+            };
+            render_browse(
+                frame,
+                browse,
+                right_area,
+                browse_title(browse, app.icons),
+                &view,
+            );
+        }
         RightPane::Info {
             preview, scroll, ..
-        } => render_info(
-            frame,
-            preview,
-            right_area,
-            app.focused(Focus::Right),
-            app.icons,
-            app.right_title(),
-            *scroll,
-        ),
+        } => {
+            let view = View {
+                focused: app.focused(Focus::Right),
+                icons: app.icons,
+                now,
+            };
+            render_info(
+                frame,
+                preview,
+                right_area,
+                app.right_title(),
+                *scroll,
+                &view,
+            );
+        }
     }
 
     render_footer(frame, app, footer);
@@ -192,6 +219,8 @@ fn browse_title(browse: &Browse, icons: bool) -> Line<'static> {
     let icon = if icons { theme::ICON_DIR } else { ICON_BLANK };
     let count = if browse.is_filtered() {
         format!("{}/{}", browse.matches.len(), browse.entries.len())
+    } else if browse.truncated {
+        format!("{}+", browse.entries.len())
     } else {
         browse.entries.len().to_string()
     };
@@ -219,11 +248,10 @@ fn render_browse(
     frame: &mut Frame,
     browse: &Browse,
     area: Rect,
-    focused: bool,
-    icons: bool,
     title: Line<'static>,
+    view: &View,
 ) {
-    let block = pane_block(title, focused);
+    let block = pane_block(title, view.focused);
 
     if let Some(error) = &browse.error {
         frame.render_widget(
@@ -260,7 +288,7 @@ fn render_browse(
     let content_width = area.width.saturating_sub(2).saturating_sub(2);
     let show_meta = content_width as usize >= 30;
 
-    let dim = if focused {
+    let dim = if view.focused {
         Modifier::empty()
     } else {
         Modifier::DIM
@@ -273,15 +301,16 @@ fn render_browse(
             ListItem::new(entry_line(
                 &browse.entries[index],
                 content_width,
-                icons,
+                view.icons,
                 show_meta,
                 dim,
+                view.now,
             ))
         })
         .collect();
 
-    let symbol_color = if focused { BLUE } else { FAINT };
-    let highlight = if focused {
+    let symbol_color = if view.focused { BLUE } else { FAINT };
+    let highlight = if view.focused {
         Style::new().bg(SELECT_BG).add_modifier(Modifier::BOLD)
     } else {
         Style::new().bg(DARK)
@@ -305,6 +334,7 @@ fn entry_line(
     icons: bool,
     show_meta: bool,
     dim: Modifier,
+    now: SystemTime,
 ) -> Line<'static> {
     let look = look(entry);
     let (icon, icon_width) = if icons {
@@ -338,7 +368,7 @@ fn entry_line(
         } else {
             human_size(entry.size)
         };
-        let age = human_age(entry.modified);
+        let age = human_age_at(entry.modified, now);
         let meta_width = META_SIZE + META_GAP + META_AGE;
         let used = icon_width + label_width + meta_width;
         let pad = (content_width as usize).saturating_sub(used).max(1);
@@ -362,11 +392,11 @@ fn render_info(
     frame: &mut Frame,
     preview: &Preview,
     area: Rect,
-    focused: bool,
-    icons: bool,
     title: String,
     scroll: u16,
+    view: &View,
 ) {
+    let (focused, icons, now) = (view.focused, view.icons, view.now);
     let icon = match preview {
         Preview::Text { .. } => theme::ICON_TEXT,
         Preview::Binary { .. } | Preview::Error(_) => theme::ICON_BINARY,
@@ -466,7 +496,16 @@ fn render_info(
             let mut lines: Vec<Line> = entries
                 .iter()
                 .take(SHOWN)
-                .map(|entry| entry_line(entry, content_width, icons, show_meta, Modifier::empty()))
+                .map(|entry| {
+                    entry_line(
+                        entry,
+                        content_width,
+                        icons,
+                        show_meta,
+                        Modifier::empty(),
+                        now,
+                    )
+                })
                 .collect();
             let rendered = lines.len().min(entries.len());
             if *total > rendered {
