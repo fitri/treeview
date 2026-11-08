@@ -2,6 +2,7 @@
 **/*.rs.bk
 *.pdb
 
-# private jottings — decision records belong in PLAN.md, which is committed
+# private jottings, never committed
 *.local.md
 NOTES.local.md
+/PLAN.md
