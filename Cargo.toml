@@ -9,9 +9,8 @@ keywords = ["tui", "file-manager", "terminal", "ratatui", "treeview"]
 categories = ["command-line-utilities"]
 repository = "https://github.com/fitri/treeview"
 documentation = "https://docs.rs/treeview"
-homepage = "https://fitri.github.io/treeview/"
 readme = "README.md"
-exclude = ["docs/**", ".github/**", "PLAN.md"]
+exclude = [".github/**", "PLAN.md"]
 
 [lib]
 name = "treeview"
