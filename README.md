@@ -112,6 +112,16 @@ fastest way to see what a change did without a terminal.
 * No syntax highlighting in the preview, no `$EDITOR` integration, no file
   operations — it is a viewer.
 
+## Building
+
+```bash
+cargo build --release                                   # 619 KB on x86_64-linux
+cargo build --release --target x86_64-unknown-linux-musl # 713 KB, fully static
+```
+
+The musl target produces a self-contained binary with no libc dependency, for
+Docker scratch images or for copying onto a box you do not control.
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
