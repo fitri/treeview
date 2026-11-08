@@ -20,20 +20,30 @@ pub const MAX_ENTRIES: usize = 20_000;
 pub const MAX_PREVIEW_BYTES: u64 = 128 * 1024;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// Filesystem type, as reported by the OS.
 pub enum Kind {
+    /// A directory.
     Directory,
+    /// A regular file.
     File,
+    /// A symbolic link; [`Entry::is_dir`] says where it points.
     Symlink,
+    /// Socket, pipe or device.
     Other,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+/// One row of a directory listing.
 pub struct Entry {
+    /// File name without its parent.
     pub name: String,
+    /// Full path, ready to open.
     pub path: PathBuf,
+    /// Filesystem type.
     pub kind: Kind,
     /// Follows symlinks: a link to a directory is `true`.
     pub is_dir: bool,
+    /// Size in bytes; 0 for directories.
     pub size: u64,
     /// Unix executable bit; always false on other platforms.
     pub is_exec: bool,
@@ -42,6 +52,7 @@ pub struct Entry {
 }
 
 impl Entry {
+    /// Whether the entry itself is a link.
     pub fn is_symlink(&self) -> bool {
         self.kind == Kind::Symlink
     }
@@ -124,6 +135,7 @@ pub fn read_entries(dir: &Path, show_hidden: bool) -> std::io::Result<(Vec<Entry
     Ok((out, truncated))
 }
 
+/// Directories first, then case-insensitive by name.
 pub fn sort_entries(entries: &mut [Entry]) {
     // `sort_by_cached_key` lowercases once per entry instead of once per
     // comparison; on a 50k-entry directory that is ~1M fewer allocations.
@@ -145,30 +157,41 @@ fn is_executable_meta(_meta: &fs::Metadata) -> bool {
 /// What the right-hand pane shows for the highlighted entry.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Preview {
+    /// A directory listing.
     Directory {
+        /// Up to [`DIR_PREVIEW_LIMIT`] entries.
         entries: Vec<Entry>,
         /// Real number of entries, which may exceed `entries.len()`.
         total: usize,
     },
+    /// A text file's first [`PREVIEW_LINES`] lines.
     Text {
+        /// The lines to display.
         lines: Vec<String>,
         /// There is more content than we are showing.
         truncated: bool,
+        /// Full file size, for the header.
         size: u64,
     },
+    /// A file that looks binary.
     Binary {
+        /// File size.
         size: u64,
     },
     /// Not a regular file: FIFO, socket, device. Opening these can block
     /// forever (a FIFO with no writer), so we never read them.
     Special {
+        /// What kind of special file it is.
         kind: &'static str,
     },
+    /// An empty file.
     Empty,
+    /// Something went wrong; the string is user-facing.
     Error(String),
 }
 
 impl Preview {
+    /// Whether there is anything to show.
     pub fn is_empty(&self) -> bool {
         matches!(self, Preview::Empty)
     }

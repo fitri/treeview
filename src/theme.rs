@@ -10,51 +10,87 @@ use crate::fs::Entry;
 
 // ---- palette ---------------------------------------------------------------
 
+/// Default text colour.
 pub const FG: Color = Color::Rgb(0xc0, 0xca, 0xf5);
+/// Secondary text and hints.
 pub const MUTED: Color = Color::Rgb(0x56, 0x5f, 0x89);
+/// Borders and separators of inactive elements.
 pub const FAINT: Color = Color::Rgb(0x2a, 0x2e, 0x44);
+/// Line numbers and metadata.
 pub const DIM_TEXT: Color = Color::Rgb(0x73, 0x7a, 0xa2);
 
+/// Accent: directories, focus, key hints.
 pub const BLUE: Color = Color::Rgb(0x7a, 0xa2, 0xf7);
+/// Markdown and prose.
 pub const CYAN: Color = Color::Rgb(0x7d, 0xcf, 0xff);
+/// Source code and shell scripts.
 pub const GREEN: Color = Color::Rgb(0x9e, 0xce, 0x6a);
+/// Rust sources and archives.
 pub const ORANGE: Color = Color::Rgb(0xff, 0x9e, 0x64);
+/// Config files and JSON.
 pub const YELLOW: Color = Color::Rgb(0xe0, 0xaf, 0x68);
+/// Images and symlinks.
 pub const MAGENTA: Color = Color::Rgb(0xbb, 0x9a, 0xf7);
+/// Errors, binaries and secrets.
 pub const RED: Color = Color::Rgb(0xf7, 0x76, 0x8e);
 
+/// Background of the header and footer bars.
 pub const CHROME_BG: Color = Color::Rgb(0x1f, 0x23, 0x35);
+/// Background of the selected row.
 pub const SELECT_BG: Color = Color::Rgb(0x28, 0x34, 0x57);
+/// Selection background of an unfocused pane.
 pub const DARK: Color = Color::Rgb(0x16, 0x16, 0x1e);
 
 // ---- glyphs (Nerd Font v3, verified present in CodeNewRoman Nerd Font) -----
 
+/// Folder outline.
 pub const ICON_DIR: &str = "\u{f114}"; // 
+/// Generic file outline.
 pub const ICON_FILE: &str = "\u{f016}"; // 
+/// Symlink.
 pub const ICON_LINK: &str = "\u{f0c1}"; // 
+/// Rust source.
 pub const ICON_RUST: &str = "\u{e7a8}"; // 
+/// Code.
 pub const ICON_CODE: &str = "\u{f121}"; // 
+/// Markdown / prose.
 pub const ICON_MARKDOWN: &str = "\u{f48a}"; // 
+/// Config file.
 pub const ICON_CONFIG: &str = "\u{e615}"; // 
+/// JSON.
 pub const ICON_JSON: &str = "\u{e60b}"; // 
+/// Shell session.
 pub const ICON_SHELL: &str = "\u{f489}"; // 
+/// Image.
 pub const ICON_IMAGE: &str = "\u{f1c5}"; // 
+/// Archive.
 pub const ICON_ARCHIVE: &str = "\u{f410}"; // 
+/// Key or certificate.
 pub const ICON_LOCK: &str = "\u{f023}"; // 
+/// Git.
 pub const ICON_GIT: &str = "\u{e702}"; // 
+/// Plain text or licence.
 pub const ICON_TEXT: &str = "\u{f0f6}"; // 
+/// PDF.
 pub const ICON_PDF: &str = "\u{f1c1}"; // 
+/// Video.
 pub const ICON_VIDEO: &str = "\u{f03d}"; // 
+/// Binary, or the error marker.
 pub const ICON_BINARY: &str = "\u{f085}"; // 
+/// Python.
 pub const ICON_PYTHON: &str = "\u{e73c}"; // 
+/// JavaScript / TypeScript.
 pub const ICON_JS: &str = "\u{e74e}"; // 
 
 /// Fallback glyph when icons are disabled: two spaces keeps the columns lined up.
 pub const ICON_BLANK: &str = "";
 
 #[derive(Debug, Clone, Copy)]
+/// Icon and colour chosen for an entry.
 pub struct Look {
+    /// Glyph to draw.
     pub icon: &'static str,
+    /// Colour for the glyph and the name.
     pub color: Color,
 }
 
@@ -120,10 +156,12 @@ pub fn chrome() -> Style {
     Style::new().bg(CHROME_BG).fg(MUTED)
 }
 
+/// Filled label used for the mode chip and pane titles.
 pub fn chip(color: Color) -> Style {
     Style::new().bg(color).fg(DARK).add_modifier(Modifier::BOLD)
 }
 
+/// Style for a key name in the footer.
 pub fn key_hint() -> Style {
     Style::new().fg(BLUE)
 }

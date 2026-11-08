@@ -7,7 +7,10 @@ license = "MIT"
 rust-version = "1.88"
 keywords = ["tui", "file-manager", "terminal", "ratatui", "filesystem"]
 categories = ["command-line-utilities"]
-# repository = "https://github.com/<you>/tree-explorer"   # set before publishing
+repository = "https://github.com/fitrialrahim/tree-explorer"
+documentation = "https://docs.rs/tree-explorer"
+homepage = "https://github.com/fitrialrahim/tree-explorer"
+readme = "README.md"
 
 [lib]
 name = "tree_explorer"

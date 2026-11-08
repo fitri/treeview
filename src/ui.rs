@@ -39,6 +39,7 @@ const META_SIZE: usize = 6;
 const META_AGE: usize = 4;
 const META_GAP: usize = 2;
 
+/// Render one frame. Pure function of `app`; call it inside `terminal.draw`.
 pub fn draw(frame: &mut Frame, app: &App) {
     let area = frame.area();
 

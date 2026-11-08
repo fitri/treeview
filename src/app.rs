@@ -15,12 +15,16 @@ use ratatui::crossterm::event::{KeyCode, KeyModifiers};
 use crate::fs::{self, Entry, Preview};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// Which pane currently owns the keyboard.
 pub enum Focus {
+    /// The directory listing.
     Left,
+    /// The preview pane.
     Right,
 }
 
 impl Focus {
+    /// The pane that is not this one.
     pub fn other(self) -> Self {
         match self {
             Focus::Left => Focus::Right,
@@ -30,15 +34,20 @@ impl Focus {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// What keyboard input currently does.
 pub enum Mode {
+    /// Keys navigate the file tree.
     Normal,
+    /// Keys build the `/` filter for the focused pane.
     Search,
 }
 
 /// A directory listing plus a filter and a cursor inside the filtered view.
 #[derive(Debug, Clone)]
 pub struct Browse {
+    /// Directory being listed.
     pub dir: PathBuf,
+    /// Every entry found, before filtering.
     pub entries: Vec<Entry>,
     /// Live filter text; `None` means "show everything".
     pub filter: Option<String>,
@@ -54,6 +63,7 @@ pub struct Browse {
 
 impl Browse {
     #[must_use]
+    /// List `dir` straight away.
     pub fn new(dir: PathBuf, show_hidden: bool) -> Self {
         let mut browse = Self {
             dir,
@@ -68,6 +78,7 @@ impl Browse {
         browse
     }
 
+    /// Re-read the directory, keeping the same entry under the cursor.
     pub fn reload(&mut self, show_hidden: bool) {
         // Remember which entry was selected by *name*, not by index: toggling
         // dotfiles or hitting `r` can insert/remove rows above the cursor.
@@ -115,12 +126,14 @@ impl Browse {
         self.pos = self.pos.min(self.matches.len().saturating_sub(1));
     }
 
+    /// The entry under the cursor.
     pub fn selected(&self) -> Option<&Entry> {
         self.matches
             .get(self.pos)
             .map(|&index| &self.entries[index])
     }
 
+    /// Whether a filter is narrowing this pane.
     pub fn is_filtered(&self) -> bool {
         self.filter.is_some()
     }
@@ -132,12 +145,14 @@ impl Browse {
         self.recompute();
     }
 
+    /// Drop the filter and show every entry again.
     pub fn clear_filter(&mut self) {
         self.filter = None;
         self.pos = 0;
         self.recompute();
     }
 
+    /// Move the cursor, clamped to the list.
     pub fn move_sel(&mut self, delta: isize) {
         if self.matches.is_empty() {
             return;
@@ -146,10 +161,12 @@ impl Browse {
         self.pos = (self.pos as isize + delta).clamp(0, last) as usize;
     }
 
+    /// Jump to the first entry.
     pub fn to_top(&mut self) {
         self.pos = 0;
     }
 
+    /// Jump to the last entry.
     pub fn to_bottom(&mut self) {
         self.pos = self.matches.len().saturating_sub(1);
     }
@@ -162,13 +179,17 @@ pub enum RightPane {
     Dir(Browse),
     /// The highlighted entry is a file: a read-only preview.
     Info {
+        /// Display name of the previewed entry.
         title: String,
+        /// What to render for it.
         preview: Preview,
+        /// First visible line of a text preview.
         scroll: u16,
     },
 }
 
 impl RightPane {
+    /// The listing, when this pane shows a directory.
     pub fn browse(&self) -> Option<&Browse> {
         match self {
             RightPane::Dir(browse) => Some(browse),
@@ -176,6 +197,7 @@ impl RightPane {
         }
     }
 
+    /// Mutable listing, when this pane shows a directory.
     pub fn browse_mut(&mut self) -> Option<&mut Browse> {
         match self {
             RightPane::Dir(browse) => Some(browse),
@@ -183,6 +205,7 @@ impl RightPane {
         }
     }
 
+    /// Name of whatever this pane is showing.
     pub fn title(&self) -> String {
         match self {
             RightPane::Dir(browse) => browse
@@ -195,22 +218,31 @@ impl RightPane {
     }
 }
 
+/// Everything the UI needs: two panes, filters and the current mode.
 pub struct App {
+    /// The directory you are browsing.
     pub left: Browse,
+    /// Preview of the highlighted entry.
     pub right: RightPane,
+    /// Pane that receives `j` and `k`.
     pub focus: Focus,
+    /// Normal navigation or `/` search.
     pub mode: Mode,
     /// Search buffer, only meaningful while `mode == Mode::Search`.
     pub query: String,
+    /// Whether dotfiles are listed (`.`).
     pub show_hidden: bool,
     /// Nerd Font icons on/off (`i`). Terminals without the font can fall back
     /// to a plain two-column layout.
     pub icons: bool,
+    /// Transient footer message.
     pub status: Option<String>,
+    /// Set when the user asked to exit.
     pub quit: bool,
 }
 
 impl App {
+    /// Start browsing `start`.
     pub fn new(start: PathBuf) -> Self {
         let start = std::fs::canonicalize(&start).unwrap_or(start);
         let left = Browse::new(start, false);
@@ -262,6 +294,7 @@ impl App {
         }
     }
 
+    /// Apply one key press.
     pub fn handle_key(&mut self, code: KeyCode, modifiers: KeyModifiers) {
         if modifiers.contains(KeyModifiers::CONTROL) && code == KeyCode::Char('c') {
             self.quit = true;
@@ -492,6 +525,7 @@ impl App {
 
     // ---- read-only helpers used by the UI and tests ----
 
+    /// Title bar text for the right pane.
     pub fn right_title(&self) -> String {
         match &self.right {
             RightPane::Dir(_) => self.right.title(),
@@ -514,6 +548,7 @@ impl App {
         }
     }
 
+    /// Whether `focus` is the active pane.
     pub fn focused(&self, focus: Focus) -> bool {
         self.focus == focus
     }

@@ -6,6 +6,8 @@
 //! `h`/`l` move focus between panes, `j`/`k` move the cursor, `enter` opens the
 //! highlighted directory, `/` filters the focused pane live.
 
+#![warn(missing_docs)]
+
 pub mod app;
 pub mod fs;
 pub mod theme;

@@ -100,6 +100,18 @@ fastest way to see what a change did without a terminal.
   entries evaluated for a preview.
 * No network, no shell-outs, no `unsafe`.
 
+## Limitations
+
+* A single directory listing is capped at 20 000 entries (the pane title shows
+  a trailing `+`). Without the cap a million-file directory took ~50 s and
+  ~700 MB.
+* Listings are synchronous: moving the cursor re-reads the highlighted
+  directory. On a normal project that is well under a millisecond; on
+  `/usr/bin` (1 200 entries) it is about 10 ms per move. A cache would need
+  careful invalidation (`r`, `.`, external changes), so there isn't one.
+* No syntax highlighting in the preview, no `$EDITOR` integration, no file
+  operations — it is a viewer.
+
 ## License
 
 MIT — see [LICENSE](LICENSE).

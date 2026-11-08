@@ -27,8 +27,18 @@ fn main() {
         .next()
         .map(PathBuf::from)
         .unwrap_or_else(|| std::env::current_dir().unwrap_or_else(|_| PathBuf::from(".")));
-    let width: u16 = args.next().and_then(|w| w.parse().ok()).unwrap_or(100);
-    let height: u16 = args.next().and_then(|h| h.parse().ok()).unwrap_or(24);
+    // Clamp: TestBackend allocates width*height cells, so `9999 9999` would
+    // try to allocate ~200 MB and can OOM the machine.
+    let width: u16 = args
+        .next()
+        .and_then(|w| w.parse().ok())
+        .unwrap_or(100)
+        .clamp(20, 400);
+    let height: u16 = args
+        .next()
+        .and_then(|h| h.parse().ok())
+        .unwrap_or(24)
+        .clamp(6, 200);
     let keys = args.next().unwrap_or_default();
 
     let mut app = App::new(path);
