@@ -36,7 +36,18 @@ jobs:
           cd "target/${{ matrix.target }}/release"
           tar -czf "$GITHUB_WORKSPACE/treeview-${{ matrix.target }}.tar.gz" treeview
 
+      # Published beside the archive so install.sh can verify what it downloaded.
+      # `shasum` is present on Linux and macOS runners alike.
+      - name: Checksum
+        shell: bash
+        working-directory: ${{ github.workspace }}
+        run: |
+          shasum -a 256 "treeview-${{ matrix.target }}.tar.gz" \
+            > "treeview-${{ matrix.target }}.tar.gz.sha256"
+
       - uses: softprops/action-gh-release@v2
         with:
-          files: treeview-${{ matrix.target }}.tar.gz
+          files: |
+            treeview-${{ matrix.target }}.tar.gz
+            treeview-${{ matrix.target }}.tar.gz.sha256
           generate_release_notes: true

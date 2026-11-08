@@ -38,6 +38,22 @@ Installs a prebuilt binary into `~/.local/bin` — override with
 `PREFIX=/usr/local/bin`. If there is no release for your platform it falls back
 to building from source with cargo.
 
+**Updating is the same command.** Re-run it and it replaces the binary in place;
+if you are already on the latest release it says so and downloads nothing.
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/fitri/treeview/main/install.sh | sh
+
+# a pinned release instead of the latest
+curl -fsSL https://raw.githubusercontent.com/fitri/treeview/main/install.sh | VERSION=v0.1.0 sh
+
+# reinstall even when the version already matches
+curl -fsSL https://raw.githubusercontent.com/fitri/treeview/main/install.sh | FORCE=1 sh
+```
+
+Archives have been published with a `.sha256` since v0.1.1 and the installer
+verifies it before touching your `PATH`, refusing a mismatched download.
+
 Prebuilt for **Linux** (x86_64, aarch64 — fully static) and **macOS** (Intel,
 Apple silicon). It also compiles on Windows with `cargo install --git`, though it
 has only been exercised on Unix.
@@ -45,9 +61,14 @@ has only been exercised on Unix.
 Other ways in:
 
 ```sh
-cargo install --git https://github.com/fitri/treeview   # from source
-cargo build --release                                   # from a checkout
+cargo install --git https://github.com/fitri/treeview            # from source
+cargo install --git https://github.com/fitri/treeview --force    # update
+cargo build --release                                           # from a checkout
 ```
+
+There is deliberately no `treeview update`: that would put an HTTP client and a
+TLS stack inside a 620 KB viewer (measured: about +800 KB and +18 crates).
+Updating stays in the installer, where the network already lives.
 
 ## Start
 
