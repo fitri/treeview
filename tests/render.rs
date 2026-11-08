@@ -378,8 +378,17 @@ fn fifos_are_never_opened() {
     while app.left.selected().map(|e| e.name.as_str()) != Some("a_fifo") {
         key(&mut app, KeyCode::Char('j'));
     }
-    // If this regresses the test suite hangs on File::open — which is exactly
-    // the bug being guarded against.
-    let screen = render(&app, 100, 24);
-    assert!(screen.contains("not previewed"), "{screen}");
+
+    // Rendering must not block. If the guard regresses, `File::open` blocks
+    // forever, so run it on a worker and fail after two seconds instead of
+    // hanging CI.
+    let (tx, rx) = std::sync::mpsc::channel();
+    std::thread::spawn(move || {
+        let screen = render(&app, 100, 24);
+        let _ = tx.send(screen);
+    });
+    match rx.recv_timeout(std::time::Duration::from_secs(2)) {
+        Ok(screen) => assert!(screen.contains("not previewed"), "{screen}"),
+        Err(_) => panic!("rendering a FIFO blocked — the preview opened a special file"),
+    }
 }

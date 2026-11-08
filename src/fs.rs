@@ -3,7 +3,7 @@
 //! Everything here is pure-ish (takes a path, returns data) so it can be tested
 //! against temporary directories without a terminal.
 
-use std::fs::{self, File};
+use std::fs;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::time::SystemTime;
@@ -82,8 +82,10 @@ fn make_entry(
 }
 
 /// Read a directory. Directories sort first, then case-insensitive by name.
-pub fn read_entries(dir: &Path, show_hidden: bool) -> std::io::Result<Vec<Entry>> {
+/// Read a directory. Returns the entries and whether the listing was capped.
+pub fn read_entries(dir: &Path, show_hidden: bool) -> std::io::Result<(Vec<Entry>, bool)> {
     let mut out = Vec::new();
+    let mut truncated = false;
     for item in fs::read_dir(dir)? {
         // A single unreadable entry must not kill the whole listing.
         let Ok(item) = item else { continue };
@@ -114,11 +116,12 @@ pub fn read_entries(dir: &Path, show_hidden: bool) -> std::io::Result<Vec<Entry>
         // Stop early rather than materialising a million entries.
         if out.len() > MAX_ENTRIES {
             out.pop();
+            truncated = true;
             break;
         }
     }
     sort_entries(&mut out);
-    Ok(out)
+    Ok((out, truncated))
 }
 
 pub fn sort_entries(entries: &mut [Entry]) {
@@ -175,7 +178,7 @@ impl Preview {
 pub fn load_preview(entry: &Entry, show_hidden: bool) -> Preview {
     if entry.is_dir {
         return match read_entries(&entry.path, show_hidden) {
-            Ok(all) => {
+            Ok((all, _)) => {
                 let total = all.len();
                 let mut entries = all;
                 entries.truncate(DIR_PREVIEW_LIMIT);
@@ -189,7 +192,7 @@ pub fn load_preview(entry: &Entry, show_hidden: bool) -> Preview {
         Ok(meta) if meta.is_dir() => {
             // Symlink pointing at a directory.
             match read_entries(&entry.path, show_hidden) {
-                Ok(mut entries) => {
+                Ok((mut entries, _)) => {
                     let total = entries.len();
                     entries.truncate(DIR_PREVIEW_LIMIT);
                     Preview::Directory { entries, total }
@@ -231,14 +234,36 @@ fn file_kind(meta: &fs::Metadata) -> &'static str {
 }
 
 fn read_text_preview(path: &Path, size: u64) -> Preview {
-    let file = match File::open(path) {
+    // `is_file()` keeps out FIFOs and devices, but some pseudo-files
+    // (/proc/kmsg, a hung network mount) still block on open or read. A
+    // non-blocking descriptor turns that into EAGAIN instead of a frozen UI.
+    let mut options = std::fs::OpenOptions::new();
+    options.read(true);
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::OpenOptionsExt;
+        options.custom_flags(libc::O_NONBLOCK);
+    }
+
+    let file = match options.open(path) {
         Ok(file) => file,
+        Err(err) if err.kind() == std::io::ErrorKind::WouldBlock => {
+            return Preview::Special {
+                kind: "would block on open",
+            };
+        }
         Err(err) => return Preview::Error(format!("cannot open: {err}")),
     };
 
     let mut buf = Vec::new();
-    if let Err(err) = file.take(MAX_PREVIEW_BYTES).read_to_end(&mut buf) {
-        return Preview::Error(format!("cannot read: {err}"));
+    match file.take(MAX_PREVIEW_BYTES).read_to_end(&mut buf) {
+        Ok(_) => {}
+        Err(err) if err.kind() == std::io::ErrorKind::WouldBlock => {
+            return Preview::Special {
+                kind: "would block on read",
+            };
+        }
+        Err(err) => return Preview::Error(format!("cannot read: {err}")),
     }
     if size == 0 {
         return Preview::Empty;
@@ -286,7 +311,15 @@ fn sanitize(line: &str) -> String {
             // C0, DEL and C1 — kept out of the data itself, not just out of the
             // renderer, so previews stay safe if they are ever logged or piped.
             c if c.is_control() => out.push(' '),
-            '\u{200b}'..='\u{200f}' => out.push(' '),
+            // Bidi overrides and invisible format characters can reorder a line
+            // on screen. ZWJ/ZWNJ (U+200C/D) are deliberately NOT stripped:
+            // they are what joins emoji and many Indic conjuncts.
+            '\u{200b}'
+            | '\u{200e}'
+            | '\u{200f}'
+            | '\u{202a}'..='\u{202e}'
+            | '\u{2066}'..='\u{2069}'
+            | '\u{feff}' => out.push(' '),
             c => out.push(c),
         }
     }
@@ -383,6 +416,14 @@ mod tests {
     fn sanitize_strips_c1_and_zero_width_too() {
         assert_eq!(sanitize("a\u{9b}31m"), "a 31m");
         assert_eq!(sanitize("a\u{200b}b"), "a b");
+        // Bidi overrides could reorder the line on screen.
+        assert_eq!(sanitize("a\u{202e}b"), "a b");
+        // ...but joiners are meaningful and must survive.
+        assert_eq!(
+            sanitize("\u{1f468}\u{200d}\u{1f469}"),
+            "\u{1f468}\u{200d}\u{1f469}"
+        );
+        assert_eq!(sanitize("\u{915}\u{94d}\u{937}"), "\u{915}\u{94d}\u{937}");
     }
 
     #[test]

@@ -17,6 +17,9 @@ path = "src/lib.rs"
 name = "tree-explorer"
 path = "src/main.rs"
 
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
+
 [dev-dependencies]
 unicode-width = "0.2"
 

@@ -218,7 +218,10 @@ fn browse_title(browse: &Browse, icons: bool) -> Line<'static> {
         .unwrap_or_else(|| browse.dir.display().to_string());
     let icon = if icons { theme::ICON_DIR } else { ICON_BLANK };
     let count = if browse.is_filtered() {
-        format!("{}/{}", browse.matches.len(), browse.entries.len())
+        // Never let a filtered view look like the whole directory when the
+        // listing itself was capped.
+        let suffix = if browse.truncated { "+" } else { "" };
+        format!("{}/{}{suffix}", browse.matches.len(), browse.entries.len())
     } else if browse.truncated {
         format!("{}+", browse.entries.len())
     } else {
@@ -294,8 +297,15 @@ fn render_browse(
         Modifier::DIM
     };
 
-    let items: Vec<ListItem> = browse
-        .matches
+    // Only build rows that can actually be seen. On a 20k-entry directory
+    // materialising every ListItem costs ~50 ms per frame, and the idle
+    // redraw then burns CPU for nothing.
+    let total = browse.matches.len();
+    let inner_height = (area.height.saturating_sub(2) as usize).max(1);
+    let height = inner_height.min(total);
+    let offset = (browse.pos + 1).saturating_sub(height);
+
+    let items: Vec<ListItem> = browse.matches[offset..offset + height]
         .iter()
         .map(|&index| {
             ListItem::new(entry_line(
@@ -308,6 +318,8 @@ fn render_browse(
             ))
         })
         .collect();
+
+    let cursor_in_window = browse.pos - offset;
 
     let symbol_color = if view.focused { BLUE } else { FAINT };
     let highlight = if view.focused {
@@ -324,7 +336,7 @@ fn render_browse(
         )))
         .highlight_style(highlight);
 
-    let mut state = ListState::default().with_selected(Some(browse.pos));
+    let mut state = ListState::default().with_selected(Some(cursor_in_window));
     frame.render_stateful_widget(list, area, &mut state);
 }
 

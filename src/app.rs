@@ -73,8 +73,8 @@ impl Browse {
         // dotfiles or hitting `r` can insert/remove rows above the cursor.
         let anchor = self.selected().map(|entry| entry.name.clone());
         match fs::read_entries(&self.dir, show_hidden) {
-            Ok(entries) => {
-                self.truncated = entries.len() >= fs::MAX_ENTRIES;
+            Ok((entries, truncated)) => {
+                self.truncated = truncated;
                 self.entries = entries;
                 self.error = None;
             }
@@ -216,7 +216,8 @@ impl App {
         let left = Browse::new(start, false);
         let mut app = Self {
             left,
-            // Placeholder, replaced by `refresh_right` below without any I/O.
+            // Placeholder: `refresh_right` below fills it in from the listing
+            // we already read, so startup does no extra I/O.
             right: RightPane::Info {
                 title: String::new(),
                 preview: Preview::Empty,
