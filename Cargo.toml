@@ -11,7 +11,7 @@ repository = "https://github.com/fitri/treeview"
 documentation = "https://docs.rs/treeview"
 homepage = "https://fitri.github.io/treeview/"
 readme = "README.md"
-exclude = ["docs/**", ".github/**"]
+exclude = ["docs/**", ".github/**", "PLAN.md"]
 
 [lib]
 name = "treeview"
