@@ -6,9 +6,9 @@ highlighted — a folder's contents, or the first 100 lines of a file.
 
 ![treeview browsing a Rust project: a coloured file list on the left, a Cargo.toml preview with line numbers on the right](https://raw.githubusercontent.com/fitri/treeview/main/assets/screenshot.png)
 
-* **left pane** — entries of the directory you are in (directories first)
-* **right pane** — the highlighted entry: its contents, or the first 100 lines of a text file
-* binary files and special files (pipes, devices, sockets) show a notice instead of garbage
+* **Left pane** — Entries of the directory you are in (directories first).
+* **Right pane** — The highlighted entry: its contents, or the first 100 lines of a file.
+* Binary files and special files (pipes, devices, sockets) show a notice instead of garbage.
 
 ## Install
 
