@@ -2,7 +2,8 @@
 
 <p align="center">
   <strong>A two-pane file explorer for the terminal.</strong> Browse on the left,
-  preview on the right. Read-only, no configuration file, one binary.
+  preview on the right. Read-only by design, so it is safe to point at a
+  directory you did not create.
 </p>
 
 <p align="center">
@@ -12,7 +13,7 @@
 </p>
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/fitri/treeview/main/assets/screenshot.png" alt="treeview browsing a Rust project: a coloured file list on the left, a Cargo.toml preview with line numbers on the right">
+  <img src="https://raw.githubusercontent.com/fitri/treeview/main/assets/screenshot.png" alt="treeview browsing a Rust project: a coloured file list on the left, the contents of the highlighted src/ folder listed on the right">
 </p>
 
 <p align="center">
@@ -37,6 +38,12 @@
 - **Small.** A 610 KB binary (713 KB with the static musl build) that starts
   instantly and reads no config.
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/fitri/treeview/main/assets/demo.gif" alt="Walking a project in treeview: the cursor moves, enter descends into src, / filters the listing to cli.rs, . reveals dotfiles">
+  <br>
+  <sub><code>enter</code> descends into a folder, <code>/</code> filters the listing, <code>.</code> reveals dotfiles</sub>
+</p>
+
 ## Install
 
 ```sh
@@ -54,21 +61,6 @@ Apple silicon). Anywhere else, Windows included, build from source:
 ```sh
 cargo install --git https://github.com/fitri/treeview
 ```
-
-## Update
-
-Re-run the same command. It replaces the binary in place and tells you what it
-did; if you are already on the latest release it stops without downloading
-anything.
-
-```sh
-# again, as-is — or pin a release:
-curl -fsSL https://raw.githubusercontent.com/fitri/treeview/main/install.sh | sh
-curl -fsSL https://raw.githubusercontent.com/fitri/treeview/main/install.sh | VERSION=v0.1.0 sh
-```
-
-`FORCE=1` after the pipe reinstalls even when the version already matches. A
-cargo install updates with `cargo install --git https://github.com/fitri/treeview --force`.
 
 ## Start
 
@@ -160,6 +152,21 @@ should never be able to hurt your terminal.
 - No syntax highlighting in the preview, no `$EDITOR` integration, no file
   operations — it is a viewer.
 
+## Update
+
+Re-run the same command. It replaces the binary in place and tells you what it
+did; if you are already on the latest release it stops without downloading
+anything.
+
+```sh
+# again, as-is — or pin a release:
+curl -fsSL https://raw.githubusercontent.com/fitri/treeview/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/fitri/treeview/main/install.sh | VERSION=v0.1.0 sh
+```
+
+`FORCE=1` after the pipe reinstalls even when the version already matches. A
+cargo install updates with `cargo install --git https://github.com/fitri/treeview --force`.
+
 ## Development
 
 Three direct dependencies and no build script. The source is small enough to read
@@ -182,6 +189,10 @@ see what a change did.
 
 Releases are built by CI: pushing a `v*` tag produces the static Linux and macOS
 binaries.
+
+Issues and pull requests are welcome. A bug report with the output of
+`treeview --version`, your `$TERM` and the terminal emulator saves a round-trip —
+there is a template for it.
 
 ## License
 

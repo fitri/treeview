@@ -10,7 +10,7 @@ categories = ["command-line-utilities"]
 repository = "https://github.com/fitri/treeview"
 documentation = "https://docs.rs/treeview"
 readme = "README.md"
-exclude = [".github/**", "PLAN.md"]
+exclude = [".github/**", "PLAN.md", "assets/**"]
 
 [lib]
 name = "treeview"

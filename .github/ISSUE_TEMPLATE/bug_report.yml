@@ -1,0 +1,77 @@
+name: Bug report
+description: Something looked wrong, crashed, or drew garbage in the terminal
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        A terminal UI bug is usually diagnosable from three facts: what you pressed,
+        what your terminal is, and what it drew. The last one is easy to attach — see
+        the screenshot question below.
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Output of `treeview --version`.
+      placeholder: treeview 0.1.0
+    validations:
+      required: true
+
+  - type: input
+    id: terminal
+    attributes:
+      label: Terminal and OS
+      description: The emulator, not just the OS — kitty, Alacritty, WezTerm, Windows Terminal, iTerm2, tmux inside another terminal…
+      placeholder: Alacritty 0.15 on Arch Linux (Wayland), inside tmux 3.5
+    validations:
+      required: true
+
+  - type: input
+    id: term
+    attributes:
+      label: $TERM
+      description: Run `printf '%s\n' "$TERM"` and paste it.
+      placeholder: xterm-256color
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: What you did
+      description: The directory you opened and the keys you pressed, in order.
+      placeholder: |
+        treeview ~/Projects
+        j j enter   → highlighted src/, then opened it
+        / readme    → started filtering
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected, and what happened instead
+    validations:
+      required: true
+
+  - type: textarea
+    id: preview
+    attributes:
+      label: Rendered output (optional, but it resolves most layout bugs immediately)
+      description: |
+        This prints one frame as text — no terminal needed, and it is the fastest way
+        to show a layout, colour or width problem in a bug report:
+
+        ```
+        cargo run --example preview -- ~/Projects 100 24 "jjl/src"
+        ```
+
+        Paste the result here, or attach a screenshot of the terminal instead.
+      render: text
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else
+      description: Font in use if the Nerd Font icons look wrong, anything unusual about the directory (very wide names, CJK, symlinks, a huge folder).

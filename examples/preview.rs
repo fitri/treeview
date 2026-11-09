@@ -4,8 +4,8 @@
 //! exactly what the UI produces:
 //!
 //! ```text
-//! cargo run --bin preview -- ~/Projects 100 24
-//! cargo run --bin preview -- ~/Projects 100 24 "jjl/src"
+//! cargo run --example preview -- ~/Projects 100 24
+//! cargo run --example preview -- ~/Projects 100 24 "jjl/src"
 //! ```
 //!
 //! The optional third argument is a key sequence. Plain characters are typed;

@@ -22,12 +22,15 @@ KEYS:
     h / l     focus the left / right pane
     j / k     move the cursor
     enter     open the highlighted directory
-    bksp      go up one level
+    bksp / -  go up one level
+    g / G     jump to the first / last entry
     /         filter the focused pane
-    i         toggle Nerd Font icons
+    esc       clear the filter, or quit
     .         toggle dotfiles
     r         reload
     d / u     scroll a text preview
+    i         toggle Nerd Font icons
+    ctrl-c    quit
     q         quit
 
 OPTIONS:
