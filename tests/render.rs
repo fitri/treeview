@@ -491,6 +491,9 @@ fn y_reports_an_empty_directory_instead_of_copying_nothing() {
     assert_eq!(app.status.as_deref(), Some("nothing selected to copy"));
 }
 
+// Windows forbids control characters in file names, so the case cannot be
+// built there; the encoding itself is covered by the unit tests in clipboard.rs.
+#[cfg(unix)]
 #[test]
 fn y_quotes_and_reveals_a_path_that_contains_a_control_character() {
     let fixture = Fixture::new();
