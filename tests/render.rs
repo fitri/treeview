@@ -490,3 +490,38 @@ fn y_reports_an_empty_directory_instead_of_copying_nothing() {
     assert_eq!(app.clipboard, None);
     assert_eq!(app.status.as_deref(), Some("nothing selected to copy"));
 }
+
+#[test]
+fn y_quotes_and_reveals_a_path_that_contains_a_control_character() {
+    let fixture = Fixture::new();
+    let name = "nl_\n_newline.txt";
+    std::fs::write(fixture.path().join(name), "x\n").unwrap();
+
+    let mut app = App::new(fixture.path().to_path_buf());
+    let wanted = Some(Some(std::ffi::OsStr::new(name)));
+    for _ in 0..32 {
+        if app.left.selected().map(|entry| entry.path.file_name()) == wanted {
+            break;
+        }
+        key(&mut app, KeyCode::Char('j'));
+    }
+    assert_eq!(
+        app.left.selected().map(|entry| entry.path.file_name()),
+        wanted
+    );
+
+    key(&mut app, KeyCode::Char('y'));
+
+    // Quoted, with the newline still inside the quotes: safe to paste.
+    let copied = app.clipboard.clone().expect("nothing copied");
+    assert!(
+        copied.starts_with('\'') && copied.ends_with('\''),
+        "{copied:?}"
+    );
+    assert!(copied.contains('\n'), "{copied:?}");
+
+    // And the status names it instead of silently dropping the newline.
+    let status = app.status.clone().expect("no status");
+    assert!(status.contains("\\n"), "{status:?}");
+    assert!(!status.contains('\n'), "{status:?}");
+}

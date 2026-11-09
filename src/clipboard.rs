@@ -8,6 +8,11 @@
 //! Terminals may ignore the sequence (some ship with clipboard writes disabled),
 //! so the caller must not claim the path actually reached the clipboard.
 //!
+//! Paths are copied verbatim unless they contain a control character, in which
+//! case they are POSIX-quoted: a newline in a copied path ends the command when
+//! it is pasted into a shell, and an ESC or C1 byte is the same injection class
+//! the renderer already guards against — only now the bytes come *from* us.
+//!
 //! [OSC 52]: https://invisible-island.net/xterm/ctlseqs/ctlseqs.html#h3-Operating-System-Commands
 
 /// The 64 symbols of standard Base64, in encoding order.
@@ -24,6 +29,55 @@ pub fn osc52(text: &str) -> String {
     out.push_str("\x1b]52;c;");
     out.push_str(&base64(text.as_bytes()));
     out.push('\x07');
+    out
+}
+
+/// A path ready to be copied, plus the form to show in the status line.
+#[derive(Debug, PartialEq, Eq)]
+pub struct Yank {
+    /// What goes on the clipboard.
+    pub payload: String,
+    /// What the status line should say, with control characters visible.
+    pub shown: String,
+}
+
+/// Decide how to copy `path`.
+///
+/// A plain path is copied as-is. One containing a control character is quoted
+/// for the shell, because the alternative is a paste that runs something else.
+#[must_use]
+pub fn yank(path: &str) -> Yank {
+    let shown = escape_controls(path);
+    if path.chars().any(char::is_control) {
+        Yank {
+            payload: format!("'{}'", path.replace('\'', "'\\''")),
+            shown: format!("'{}'", shown.replace('\'', "'\\''")),
+        }
+    } else {
+        Yank {
+            payload: path.to_string(),
+            shown,
+        }
+    }
+}
+
+/// Write control characters as text, so the status line can be trusted.
+///
+/// The renderer drops `Cc` before it reaches the terminal, which is right for
+/// untrusted names but wrong for a confirmation: it would claim a path that is
+/// not the one copied.
+fn escape_controls(path: &str) -> String {
+    let mut out = String::with_capacity(path.len());
+    for c in path.chars() {
+        match c {
+            '\n' => out.push_str("\\n"),
+            '\r' => out.push_str("\\r"),
+            '\t' => out.push_str("\\t"),
+            c if c.is_ascii_control() => out.push_str(&format!("\\x{:02x}", c as u32)),
+            c if c.is_control() => out.push_str(&format!("\\u{{{:x}}}", c as u32)),
+            c => out.push(c),
+        }
+    }
     out
 }
 
@@ -52,7 +106,7 @@ fn base64(bytes: &[u8]) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::{base64, osc52};
+    use super::{base64, escape_controls, osc52, yank};
 
     #[test]
     fn base64_matches_the_reference_vectors() {
@@ -81,5 +135,36 @@ mod tests {
     #[test]
     fn osc52_handles_an_empty_path() {
         assert_eq!(osc52(""), "\u{1b}]52;c;\u{7}");
+    }
+
+    #[test]
+    fn control_characters_become_visible_escapes() {
+        assert_eq!(escape_controls("/tmp/nl_\n_x.txt"), "/tmp/nl_\\n_x.txt");
+        assert_eq!(escape_controls("bel_\u{7}_.txt"), "bel_\\x07_.txt");
+        assert_eq!(escape_controls("esc_\u{1b}_.txt"), "esc_\\x1b_.txt");
+        assert_eq!(escape_controls("c1_\u{9b}31m.txt"), "c1_\\u{9b}31m.txt");
+        assert_eq!(escape_controls("/plain/path.rs"), "/plain/path.rs");
+    }
+
+    #[test]
+    fn a_plain_path_is_copied_untouched() {
+        let yanked = yank("/tmp/plain path/file.rs");
+        assert_eq!(yanked.payload, "/tmp/plain path/file.rs");
+        assert_eq!(yanked.shown, yanked.payload);
+    }
+
+    #[test]
+    fn a_path_with_a_newline_is_quoted_for_the_shell() {
+        let yanked = yank("/tmp/nl_\n_x.txt");
+        // The newline stays inside the quotes, so a paste cannot end the command.
+        assert_eq!(yanked.payload, "'/tmp/nl_\n_x.txt'");
+        // The status line shows where it is instead of hiding it.
+        assert_eq!(yanked.shown, "'/tmp/nl_\\n_x.txt'");
+    }
+
+    #[test]
+    fn an_embedded_single_quote_is_escaped() {
+        let yanked = yank("/tmp/it's\nhere.txt");
+        assert_eq!(yanked.payload, "'/tmp/it'\\''s\nhere.txt'");
     }
 }
