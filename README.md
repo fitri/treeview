@@ -33,7 +33,8 @@
   filter, `esc` brings the full list back.
 - **Yank a path.** `y` copies the highlighted path, in either pane. It goes out
   as an OSC 52 sequence rather than through `pbcopy` or `wl-copy`, so it works
-  over SSH too.
+  over SSH too. A path containing a control character is quoted for the shell,
+  and the status line spells the character out (`\n`) rather than hiding it.
 - **Colour by file type.** A per-extension palette and Nerd Font icons. Press
   `i` for a plain ASCII layout on terminals without the font.
 - **Read-only by design.** It never writes, moves, renames or deletes, and it

@@ -576,9 +576,11 @@ impl App {
             self.status = Some("nothing selected to copy".into());
             return;
         };
-        let path = path.display().to_string();
-        self.status = Some(format!("copied {path}"));
-        self.clipboard = Some(path);
+        // A path with a control character is quoted for the shell and escaped
+        // for the status line, so the confirmation matches the payload.
+        let yanked = crate::clipboard::yank(&path.display().to_string());
+        self.status = Some(format!("copied {}", yanked.shown));
+        self.clipboard = Some(yanked.payload);
     }
 
     fn scroll_preview(&mut self, delta: i32) {
