@@ -2,7 +2,7 @@
 
 <p align="center">
   <strong>A two-pane file explorer for the terminal.</strong> Browse on the left,
-  preview on the right — no configuration file, no runtime, one static binary.
+  preview on the right. Read-only, no configuration file, one binary.
 </p>
 
 <p align="center">
@@ -32,9 +32,10 @@
   filter, `esc` brings the full list back.
 - **Colour by file type.** A per-extension palette and Nerd Font icons. Press
   `i` for a plain ASCII layout on terminals without the font.
-- **Safe by construction.** Control characters are stripped before rendering,
-  and FIFOs and devices are never opened — see [Safety](#safety).
-- **Small.** A ~620 KB static binary that starts instantly and reads no config.
+- **Read-only by design.** It never writes, moves, renames or deletes, and it
+  opens only regular files — see [Safety](#safety).
+- **Small.** A 610 KB binary (713 KB with the static musl build) that starts
+  instantly and reads no config.
 
 ## Install
 
@@ -42,41 +43,32 @@
 curl -fsSL https://raw.githubusercontent.com/fitri/treeview/main/install.sh | sh
 ```
 
-Installs a prebuilt binary into `~/.local/bin` — override with
-`PREFIX=/usr/local/bin`. If there is no release for your platform it falls back
-to building from source with cargo.
-
-**Updating is the same command.** Re-run it and it replaces the binary in place;
-if you are already on the latest release it says so and downloads nothing.
-
-```sh
-curl -fsSL https://raw.githubusercontent.com/fitri/treeview/main/install.sh | sh
-
-# a pinned release instead of the latest
-curl -fsSL https://raw.githubusercontent.com/fitri/treeview/main/install.sh | VERSION=v0.1.0 sh
-
-# reinstall even when the version already matches
-curl -fsSL https://raw.githubusercontent.com/fitri/treeview/main/install.sh | FORCE=1 sh
-```
-
-Archives have been published with a `.sha256` since v0.1.1 and the installer
-verifies it before touching your `PATH`, refusing a mismatched download.
+Puts a prebuilt binary in `~/.local/bin`; `PREFIX=/usr/local/bin` overrides that,
+and the script warns you if the directory is not on your `PATH`. The archive is
+checked against the release's `.sha256` whenever one is published (v0.1.1
+onward).
 
 Prebuilt for **Linux** (x86_64, aarch64 — fully static) and **macOS** (Intel,
-Apple silicon). It also compiles on Windows with `cargo install --git`, though it
-has only been exercised on Unix.
-
-Other ways in:
+Apple silicon). Anywhere else, Windows included, build from source:
 
 ```sh
-cargo install --git https://github.com/fitri/treeview            # from source
-cargo install --git https://github.com/fitri/treeview --force    # update
-cargo build --release                                           # from a checkout
+cargo install --git https://github.com/fitri/treeview
 ```
 
-There is deliberately no `treeview update`: that would put an HTTP client and a
-TLS stack inside a 620 KB viewer (measured: about +800 KB and +18 crates).
-Updating stays in the installer, where the network already lives.
+## Update
+
+Re-run the same command. It replaces the binary in place and tells you what it
+did; if you are already on the latest release it stops without downloading
+anything.
+
+```sh
+# again, as-is — or pin a release:
+curl -fsSL https://raw.githubusercontent.com/fitri/treeview/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/fitri/treeview/main/install.sh | VERSION=v0.1.0 sh
+```
+
+`FORCE=1` after the pipe reinstalls even when the version already matches. A
+cargo install updates with `cargo install --git https://github.com/fitri/treeview --force`.
 
 ## Start
 
@@ -86,49 +78,59 @@ treeview ~/Projects   # a directory you name
 treeview ~/.bashrc    # its parent, with the file under the cursor
 ```
 
-The path is optional and defaults to the current directory. A path that names a
-file opens its parent and puts the cursor on that file, since a terminal cannot
-list a file. A path that does not exist is reported and exits non-zero instead
-of opening an empty pane.
+The path is optional, and with none it opens the current directory. Given a file
+it opens the parent and puts the cursor on it — a terminal cannot list a file.
+A path that does not exist is reported and exits non-zero, rather than opening an
+empty pane.
+
+`treeview --help` prints the keys, `treeview --version` the version, and `--`
+ends option parsing for a path that begins with a dash.
 
 ## Keys
 
+Vim keys, with the arrow keys working wherever `h` `j` `k` `l` do.
+
 | Key | Action |
 | --- | --- |
-| `h` `l` | move focus between the left and right pane |
+| `h` `l` | move focus between the panes (the right one only when it lists a directory) |
 | `j` `k` | move the cursor inside the focused pane |
 | `enter` | open the highlighted directory — it becomes the left pane |
 | `bksp` / `-` | go up one level (re-selects the directory you came from) |
+| `g` / `G` | jump to the first / last entry |
 | `/` | filter the focused pane, live |
 | `enter` in search | keep the filter and go back to the pane |
 | `esc` in search | clear the filter and show everything |
 | `esc` | clear a filter, or quit when there is none |
-| `g` / `G` | jump to the first / last entry |
 | `.` | toggle dotfiles |
 | `r` | reload both panes |
 | `d` / `u`, `PgDn` / `PgUp` | scroll a text preview |
 | `i` | toggle Nerd Font icons / plain ASCII |
 | `q` | quit |
 
+`ctrl-c` quits from anywhere. The window needs to be at least 24×6, and the
+palette assumes a truecolour terminal.
+
 ## Colour and icons
 
-A Tokyo-Night-ish palette, chosen per file type:
+Chosen per file type, Tokyo-Night-ish:
 
-| | |
+| Kind | Colour · icon |
 | --- | --- |
-| directories | blue, bold, outline folder |
-| Rust | orange, gear |
-| markdown / text | cyan, document |
-| config (toml, yaml, json…) | yellow |
-| code (py, js, go, sh…) | green, `</>` |
-| images | magenta, image |
-| archives · pdf · binaries | orange / red |
-| symlinks | magenta, link |
+| directories | blue · outlined folder |
+| Rust | orange · gear |
+| Python | yellow |
+| code (js, ts, go, c, sh…) | green · `</>` |
+| markdown / text | cyan · document |
+| config (toml, yaml, json, env…) | yellow |
+| images, video | magenta · image / film |
+| archives | orange · box |
+| pdf, binaries, keys | red |
+| symlinks | magenta · link |
 
 Icons need a **Nerd Font on the machine you view from** (verified against
 CodeNewRoman Nerd Font Mono). Without one, press `i` and everything falls back to
-a plain two-column layout. Size and age columns appear only when the pane is wide
-enough, so narrow terminals stay readable.
+a plain two-column layout. Size and age appear only when the pane is wide enough,
+so narrow terminals stay readable.
 
 ## Safety
 
@@ -138,7 +140,7 @@ should never be able to hurt your terminal.
 - **No escape-sequence injection.** File names, the highlighted path, the filter
   query and file contents all pass through ratatui's `Buffer`, which drops
   control characters (C0, DEL, C1) before anything reaches the terminal. A file
-  named `pwn<ESC>[2J.txt` renders as inert text. Verified at the byte level.
+  named `pwn<ESC>[2J.txt` renders as inert text.
 - **Special files are never opened.** A FIFO with no writer, or `/dev/ptmx`,
   would block `open(2)` forever and freeze the event loop; previews are limited
   to regular files.
@@ -148,8 +150,9 @@ should never be able to hurt your terminal.
 
 ## Limitations
 
-- A single directory listing is capped at 20 000 entries (the pane title shows a
-  trailing `+`). Without the cap a million-file directory took ~50 s and ~700 MB.
+- A directory listing is capped at 20 000 entries; a trailing `+` in the pane
+  title says so. A directory previewed on the right shows its first 200 rows.
+  Uncapped, a million-file directory took ~50 s and ~700 MB.
 - Listings are synchronous: moving the cursor re-reads the highlighted directory.
   On a normal project that is well under a millisecond; on `/usr/bin` (1 200
   entries) it is about 10 ms per move. A cache would need careful invalidation
@@ -159,29 +162,26 @@ should never be able to hurt your terminal.
 
 ## Development
 
-```
-src/theme.rs   palette, icons, per-extension colours
-src/fs.rs      read directories, build previews (no UI types)
-src/app.rs     state: two panes, filter, focus, key handling
-src/cli.rs     command-line parsing and the start path
-src/ui.rs      rendering; a pure function of App
-src/main.rs    terminal setup + the event loop
-examples/preview.rs  render to stdout, no terminal needed
-tests/render.rs      headless tests against a temp directory
-```
+Three direct dependencies and no build script. The source is small enough to read
+in an afternoon: `app.rs` holds the state and key handling, `fs.rs` reads
+directories and builds previews, `ui.rs` draws (a pure function of `App`),
+`theme.rs` is the palette, and `cli.rs` parses arguments. The tests drive the
+real renderer against a temporary directory.
 
 ```bash
-cargo run                                            # start in the current directory
+cargo run                                            # start here
 cargo test                                           # headless UI tests
+cargo build --release                                # the binary, at target/release/treeview
 cargo run --example preview -- . 100 24 "jjl/src"    # screenshot as text
 ```
 
-The `preview` example accepts a key sequence after the path — plain characters
-are typed, `<enter>` `<esc>` `<bs>` `<up>` `<down>` `<tab>` are recognised. It is
-the fastest way to see what a change did without a terminal.
+The `preview` example renders a single frame to stdout, so it needs no terminal,
+and takes a key sequence after the path: plain characters are typed, `<enter>`
+`<esc>` `<bs>` `<up>` `<down>` `<tab>` are recognised. It is the quickest way to
+see what a change did.
 
-Releases are built by CI: pushing a `v*` tag produces static Linux and macOS
-binaries via GitHub Actions.
+Releases are built by CI: pushing a `v*` tag produces the static Linux and macOS
+binaries.
 
 ## License
 
