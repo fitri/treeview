@@ -9,6 +9,7 @@ permissions:
   contents: write
 
 jobs:
+  # One artifact per target, built in parallel.
   build:
     name: ${{ matrix.target }}
     runs-on: ${{ matrix.os }}
@@ -21,20 +22,51 @@ jobs:
           - { target: x86_64-apple-darwin,       os: macos-latest }
           - { target: aarch64-apple-darwin,      os: macos-latest }
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      # A tag that disagrees with the manifest ships a binary whose --version
+      # does not match the release, and the updater then reinstalls forever:
+      # install.sh compares `treeview --version` with the tag name.
+      - name: Tag matches the manifest
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: bash
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          manifest="$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -n 1)"
+          if [ "$tag" != "$manifest" ]; then
+            echo "tag v$tag does not match Cargo.toml version $manifest" >&2
+            exit 1
+          fi
 
       # Handles musl toolchains and cross linkers for the aarch64 target.
-      - uses: houseabsolute/actions-rust-cross@v1
+      - uses: houseabsolute/actions-rust-cross@85826e468eac832e251ac58f6191ba784db237c8 # v1
         with:
           command: build
           target: ${{ matrix.target }}
           args: --release --locked
 
+      # Staticness is what makes the musl binaries work on Alpine and in
+      # scratch containers; a regression here only shows up on a user's machine.
+      - name: Assert the binary is static
+        if: contains(matrix.target, 'linux-musl')
+        shell: bash
+        run: |
+          bin="target/${{ matrix.target }}/release/treeview"
+          file "$bin"
+          if file "$bin" | grep -q "dynamically linked"; then
+            echo "expected a static binary" >&2
+            exit 1
+          fi
+
       - name: Package
         shell: bash
         run: |
           cd "target/${{ matrix.target }}/release"
-          tar -czf "$GITHUB_WORKSPACE/treeview-${{ matrix.target }}.tar.gz" treeview
+          # MIT requires the notice in copies, and the README is the other half
+          # of what someone needs when they unzip this.
+          cp "$GITHUB_WORKSPACE/LICENSE" "$GITHUB_WORKSPACE/README.md" .
+          tar -czf "$GITHUB_WORKSPACE/treeview-${{ matrix.target }}.tar.gz" \
+            treeview LICENSE README.md
 
       # Published beside the archive so install.sh can verify what it downloaded.
       # `shasum` is present on Linux and macOS runners alike.
@@ -45,9 +77,37 @@ jobs:
           shasum -a 256 "treeview-${{ matrix.target }}.tar.gz" \
             > "treeview-${{ matrix.target }}.tar.gz.sha256"
 
-      - uses: softprops/action-gh-release@v2
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          files: |
+          name: treeview-${{ matrix.target }}
+          path: |
             treeview-${{ matrix.target }}.tar.gz
             treeview-${{ matrix.target }}.tar.gz.sha256
+          if-no-files-found: error
+
+  # One release, created once. Doing this from the matrix used to publish the
+  # notes four times over, and let /releases/latest flip to a release whose
+  # assets were still uploading.
+  release:
+    name: publish
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Check the artifacts
+        shell: bash
+        run: |
+          ls -l dist
+          cd dist
+          for f in *.tar.gz; do
+            shasum -a 256 -c "$f.sha256" || exit 1
+          done
+
+      - uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
+        with:
+          files: dist/*
           generate_release_notes: true

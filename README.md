@@ -192,6 +192,14 @@ and takes a key sequence after the path: plain characters are typed, `<enter>`
 `<esc>` `<bs>` `<up>` `<down>` `<tab>` are recognised. It is the quickest way to
 see what a change did.
 
+The screenshots in this README come from the `shot` example, which rasterises the
+same `TestBackend` buffer with a Nerd Font — pass a font path, or set
+`TREEVIEW_SHOT_FONT`:
+
+```bash
+cargo run --example shot -- shot.png 100 15 ~/Projects "jj"     ~/.local/share/fonts/CodeNewRoman/CodeNewRomanNerdFontMono-Regular.otf
+```
+
 Releases are built by CI: pushing a `v*` tag produces the static Linux and macOS
 binaries.
 

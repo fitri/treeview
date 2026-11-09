@@ -1,6 +1,6 @@
 [package]
 name = "treeview"
-version = "0.1.2"
+version = "0.1.3"
 edition = "2024"
 description = "Two-pane terminal file explorer"
 license = "MIT"
@@ -25,6 +25,9 @@ libc = "0.2"
 
 [dev-dependencies]
 unicode-width = "0.2"
+# Examples only: `shot` renders the assets, `preview` needs the width helper.
+ab_glyph = "0.2"
+image = { version = "0.25", default-features = false, features = ["png", "gif"] }
 
 [dependencies]
 # Only crossterm: we use no calendar, macros, underline-color or layout cache.
