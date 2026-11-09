@@ -20,6 +20,13 @@ PREFIX="${PREFIX:-$HOME/.local/bin}"
 VERSION="${VERSION:-latest}"
 
 say() { printf '  %s\n' "$*"; }
+
+# The literal `$PATH` in the output is deliberate: it is shell text to copy.
+# shellcheck disable=SC2016
+missing_path_hint() {
+    printf '\n  note: %s is not on your PATH. Add:\n\n    export PATH="%s:$PATH"\n' \
+        "$PREFIX" "$PREFIX"
+}
 die() { printf '\nerror: %s\n' "$*" >&2; exit 1; }
 
 printf '\ntreeview installer\n\n'
@@ -180,9 +187,7 @@ fi
 
 case ":${PATH}:" in
     *":${PREFIX}:"*) ;;
-    # The literal `$PATH` is the point: this is shell text for the user to copy.
-    # shellcheck disable=SC2016
-    *) printf '\n  note: %s is not on your PATH. Add:\n\n    export PATH="%s:$PATH"\n' "$PREFIX" "$PREFIX" ;;
+    *) missing_path_hint ;;
 esac
 
 printf '\nDone. Run `treeview` in any directory; re-run this script to update.\n\n'
