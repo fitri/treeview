@@ -180,6 +180,8 @@ fi
 
 case ":${PATH}:" in
     *":${PREFIX}:"*) ;;
+    # The literal `$PATH` is the point: this is shell text for the user to copy.
+    # shellcheck disable=SC2016
     *) printf '\n  note: %s is not on your PATH. Add:\n\n    export PATH="%s:$PATH"\n' "$PREFIX" "$PREFIX" ;;
 esac
 
