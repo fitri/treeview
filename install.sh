@@ -59,6 +59,8 @@ esac
 # as absent, so the reinstall path repairs it.
 current_version() {
     [ -x "$PREFIX/$BIN" ] || return 1
+    # `$2` belongs to awk, not the shell.
+    # shellcheck disable=SC2016
     "$PREFIX/$BIN" --version 2>/dev/null | awk 'NR == 1 { print "v" $2 }'
 }
 
@@ -85,7 +87,7 @@ fi
 
 if [ -n "$HAVE" ] && [ -n "$WANT" ] && [ "$HAVE" = "$WANT" ] && [ "${FORCE:-0}" != "1" ]; then
     say "already at ${HAVE} — nothing to do"
-    printf '\nDone. Run `treeview` in any directory.\n\n'
+    printf '\nDone. Run treeview in any directory.\n\n'
     exit 0
 fi
 
@@ -99,6 +101,8 @@ URL="${BASE}/${BIN}-${TARGET}.tar.gz"
 
 # ---- download helpers --------------------------------------------------------
 TMP="$(mktemp -d)"
+# Single quotes are deliberate: "$TMP" has to expand when the trap fires.
+# shellcheck disable=SC2016
 trap 'rm -rf "$TMP"' EXIT INT TERM
 
 fetch() {
@@ -190,4 +194,4 @@ case ":${PATH}:" in
     *) missing_path_hint ;;
 esac
 
-printf '\nDone. Run `treeview` in any directory; re-run this script to update.\n\n'
+printf '\nDone. Run treeview in any directory; re-run this script to update.\n\n'
