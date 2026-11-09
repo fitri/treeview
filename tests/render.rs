@@ -431,3 +431,62 @@ fn reveal_unhides_a_dotfile_it_was_asked_for() {
         Some(".secret")
     );
 }
+
+#[test]
+fn y_copies_the_path_under_the_left_cursor() {
+    let fixture = Fixture::new();
+    let mut app = App::new(fixture.path().to_path_buf());
+    // alpha/ is first, so the cursor already sits on a directory.
+    assert_eq!(app.path_to_copy(), Some(fixture.path().join("alpha")));
+
+    key(&mut app, KeyCode::Char('y'));
+    assert_eq!(
+        app.clipboard,
+        Some(fixture.path().join("alpha").display().to_string())
+    );
+    assert!(
+        app.status
+            .as_deref()
+            .is_some_and(|s| s.starts_with("copied ")),
+        "status should name the copied path: {:?}",
+        app.status
+    );
+}
+
+#[test]
+fn y_follows_the_right_pane_when_it_has_focus() {
+    let fixture = Fixture::new();
+    let mut app = App::new(fixture.path().to_path_buf());
+    key(&mut app, KeyCode::Char('l')); // focus the listing of alpha/
+    assert_eq!(app.focus, Focus::Right);
+
+    // First row of alpha/ is nested/; moving down reaches one.txt.
+    assert_eq!(
+        app.path_to_copy(),
+        Some(fixture.path().join("alpha/nested"))
+    );
+    key(&mut app, KeyCode::Char('j'));
+    assert_eq!(
+        app.path_to_copy(),
+        Some(fixture.path().join("alpha/one.txt"))
+    );
+}
+
+#[test]
+fn y_reports_an_empty_directory_instead_of_copying_nothing() {
+    let fixture = Fixture::new();
+    std::fs::create_dir(fixture.path().join("empty")).unwrap();
+    let mut app = App::new(fixture.path().to_path_buf());
+    for _ in 0..16 {
+        if app.left.selected().map(|e| e.name.as_str()) == Some("empty") {
+            break;
+        }
+        key(&mut app, KeyCode::Char('j'));
+    }
+    key(&mut app, KeyCode::Enter); // open the empty directory
+
+    assert_eq!(app.path_to_copy(), None);
+    key(&mut app, KeyCode::Char('y'));
+    assert_eq!(app.clipboard, None);
+    assert_eq!(app.status.as_deref(), Some("nothing selected to copy"));
+}

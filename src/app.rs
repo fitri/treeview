@@ -238,6 +238,9 @@ pub struct App {
     pub icons: bool,
     /// Transient footer message.
     pub status: Option<String>,
+    /// Text waiting to be copied on the next frame: `main` reads it, writes the
+    /// OSC 52 sequence and clears it. Keeping it here leaves the renderer pure.
+    pub clipboard: Option<String>,
     /// Set when the user asked to exit.
     pub quit: bool,
 }
@@ -262,6 +265,7 @@ impl App {
             show_hidden: false,
             icons: true,
             status: None,
+            clipboard: None,
             quit: false,
         };
         app.refresh_right();
@@ -422,6 +426,7 @@ impl App {
                 });
             }
             KeyCode::Char('r') => self.reload(),
+            KeyCode::Char('y') => self.copy_path(),
             KeyCode::PageDown | KeyCode::Char('d') => self.scroll_preview(10),
             KeyCode::PageUp | KeyCode::Char('u') => self.scroll_preview(-10),
             _ => {}
@@ -548,6 +553,32 @@ impl App {
         self.left.reload(self.show_hidden);
         self.refresh_right();
         self.status = Some("reloaded".into());
+    }
+
+    /// The path `y` would copy: the cursor of the focused pane.
+    ///
+    /// A file preview has no rows of its own, so the selection of the left pane
+    /// is the answer there — it is the file being previewed.
+    #[must_use]
+    pub fn path_to_copy(&self) -> Option<PathBuf> {
+        match self.focus {
+            Focus::Left => self.left.selected().map(|entry| entry.path.clone()),
+            Focus::Right => match &self.right {
+                RightPane::Dir(browse) => browse.selected().map(|entry| entry.path.clone()),
+                RightPane::Info { .. } => self.left.selected().map(|entry| entry.path.clone()),
+            },
+        }
+    }
+
+    /// Hand the highlighted path to the clipboard.
+    fn copy_path(&mut self) {
+        let Some(path) = self.path_to_copy() else {
+            self.status = Some("nothing selected to copy".into());
+            return;
+        };
+        let path = path.display().to_string();
+        self.status = Some(format!("copied {path}"));
+        self.clipboard = Some(path);
     }
 
     fn scroll_preview(&mut self, delta: i32) {

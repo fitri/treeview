@@ -13,6 +13,7 @@
 
 pub mod app;
 pub mod cli;
+pub mod clipboard;
 pub mod fs;
 pub mod theme;
 pub mod ui;

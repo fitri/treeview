@@ -28,6 +28,7 @@ KEYS:
     esc       clear the filter, or quit
     .         toggle dotfiles
     r         reload
+    y         copy the highlighted path
     d / u     scroll a text preview
     i         toggle Nerd Font icons
     ctrl-c    quit

@@ -1,4 +1,4 @@
-use std::io;
+use std::io::{self, Write};
 use std::process::ExitCode;
 use std::time::Duration;
 
@@ -71,6 +71,20 @@ fn run(start: Start) -> ExitCode {
     }
 }
 
+/// Emit any clipboard request the app queued this frame.
+///
+/// OSC 52 goes through the same writer ratatui draws with, so it cannot land in
+/// the middle of a half-written frame.
+fn copy_pending(terminal: &mut DefaultTerminal, app: &mut App) -> io::Result<()> {
+    let Some(text) = app.clipboard.take() else {
+        return Ok(());
+    };
+    terminal
+        .backend_mut()
+        .write_all(treeview::clipboard::osc52(&text).as_bytes())?;
+    terminal.backend_mut().flush()
+}
+
 fn event_loop(terminal: &mut DefaultTerminal, mut app: App) -> io::Result<()> {
     while !app.quit {
         terminal.draw(|frame| ui::draw(frame, &app))?;
@@ -82,6 +96,7 @@ fn event_loop(terminal: &mut DefaultTerminal, mut app: App) -> io::Result<()> {
             && key.kind == KeyEventKind::Press
         {
             app.handle_key(key.code, key.modifiers);
+            copy_pending(terminal, &mut app)?;
         }
     }
     Ok(())

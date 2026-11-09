@@ -31,6 +31,9 @@
   bytes into your terminal.
 - **Filter as you type.** `/` narrows the focused pane live; `enter` keeps the
   filter, `esc` brings the full list back.
+- **Yank a path.** `y` copies the highlighted path, in either pane. It goes out
+  as an OSC 52 sequence rather than through `pbcopy` or `wl-copy`, so it works
+  over SSH too.
 - **Colour by file type.** A per-extension palette and Nerd Font icons. Press
   `i` for a plain ASCII layout on terminals without the font.
 - **Read-only by design.** It never writes, moves, renames or deletes, and it
@@ -95,6 +98,7 @@ Vim keys, with the arrow keys working wherever `h` `j` `k` `l` do.
 | `esc` | clear a filter, or quit when there is none |
 | `.` | toggle dotfiles |
 | `r` | reload both panes |
+| `y` | copy the highlighted path to the clipboard |
 | `d` / `u`, `PgDn` / `PgUp` | scroll a text preview |
 | `i` | toggle Nerd Font icons / plain ASCII |
 | `q` | quit |

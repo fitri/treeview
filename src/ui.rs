@@ -624,20 +624,21 @@ fn filtered_query(app: &App) -> Option<String> {
 fn hints(width: u16, icons: bool) -> Vec<Span<'static>> {
     // `width` is the space actually available to the left of the status text.
 
-    let all: [(&str, &str); 7] = [
+    let all: [(&str, &str); 8] = [
         ("h/l", "pane"),
         ("j/k", "move"),
         ("enter", "open"),
         ("bksp", "up"),
+        ("y", "copy"),
         ("/", "find"),
         ("i", if icons { "icons" } else { "ascii" }),
         ("q", "quit"),
     ];
     let keep = match width {
-        w if w >= 92 => all.len(),
-        w if w >= 76 => 6,
-        w if w >= 62 => 4,
-        w if w >= 50 => 3,
+        w if w >= 84 => all.len(),
+        w if w >= 76 => 7,
+        w if w >= 60 => 5,
+        w if w >= 42 => 3,
         _ => 1,
     };
     let mut spans = Vec::new();
